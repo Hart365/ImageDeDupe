@@ -1,0 +1,23 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+publish/
+
+# Visual Studio / Rider
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.suo.user
+
+# Rider / JetBrains
+.idea/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+Folder.jpg
+Folder.db

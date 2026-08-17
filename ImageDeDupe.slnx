@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ImageDeDupeApp.Tests/ImageDeDupeApp.Tests.csproj" />
+  <Project Path="ImageDeDupeApp/ImageDeDupeApp.csproj" />
+</Solution>

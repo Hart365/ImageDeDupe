@@ -1,0 +1,692 @@
+<Window x:Class="ImageDeDupeApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ImageDeDupeApp"
+        xmlns:converters="clr-namespace:ImageDeDupeApp.Converters"
+        mc:Ignorable="d"
+        Title="ImageDeDupe - (c) 2026 Mike Hartley / Hart of the Midlands" 
+        Icon="/Resources/app_logo.png"
+        Height="780" Width="1050"
+        MinHeight="600" MinWidth="850"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <converters:ThumbnailConverter x:Key="ThumbnailConverter" />
+        <converters:FileSizeConverter x:Key="FileSizeConverter" />
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <!-- 0: App Header -->
+            <RowDefinition Height="Auto" />
+            <!-- 1: Folder Selection -->
+            <RowDefinition Height="Auto" />
+            <!-- 2: Configuration Options -->
+            <RowDefinition Height="Auto" />
+            <!-- 3: Progress & Status -->
+            <RowDefinition Height="Auto" />
+            <!-- 4: Gallery (List of duplicates) -->
+            <RowDefinition Height="*" />
+            <!-- 5: Action Buttons -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: App Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- App Icon Logo in Header -->
+                <Image Source="/Resources/app_logo.png" 
+                       Width="36" Height="36" 
+                       VerticalAlignment="Center" 
+                       Margin="0,0,12,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ImageDeDupe" 
+                                   FontSize="22" 
+                                   FontWeight="Black" 
+                                   Foreground="{StaticResource AccentBrush}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Identify and sweep duplicate or near-duplicate images." 
+                               Foreground="{StaticResource SecondaryTextBrush}" 
+                               FontSize="12" 
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </StackPanel>
+            
+            <!-- Status Checkmark Icon -->
+            <Image Grid.Column="1" 
+                   Source="/Resources/check_icon.png" 
+                   Width="28" Height="28" 
+                   VerticalAlignment="Center" 
+                   HorizontalAlignment="Right"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Grid>
+
+        <!-- Row 1: Folder Selection -->
+        <GroupBox Grid.Row="1" Header="Folder to Scan" Margin="0,0,0,16" Focusable="False">
+            <Grid Margin="0,8,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <TextBox x:Name="TxtFolderPath" 
+                         Grid.Column="0" 
+                         VerticalAlignment="Center"
+                         Margin="0,0,16,0" 
+                         IsReadOnly="True"
+                         AutomationProperties.Name="Selected Folder Path"
+                         AutomationProperties.HelpText="Displays the path of the folder selected for scanning." />
+
+                <Button x:Name="BtnBrowse" 
+                        Grid.Column="1" 
+                        Content="Browse..." 
+                        Click="BtnBrowse_Click"
+                        Padding="16,8"
+                        VerticalAlignment="Center"
+                        Margin="0,0,20,0"
+                        AutomationProperties.Name="Browse folder"
+                        AutomationProperties.HelpText="Opens a dialog to select a folder from your computer." />
+
+                <CheckBox x:Name="ChkIncludeSubfolders" 
+                          Grid.Column="2" 
+                          Content="Include subfolders" 
+                          IsChecked="True"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="Include subfolders"
+                          AutomationProperties.HelpText="Check this box to scan all subfolders inside the selected folder." />
+            </Grid>
+        </GroupBox>
+
+        <!-- Row 2: Configuration Options -->
+        <Grid Grid.Row="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3.2*" />
+                <ColumnDefinition Width="1.8*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Comparison Criteria -->
+            <GroupBox Grid.Column="0" Header="Comparison Criteria" Margin="0,0,12,0" Focusable="False">
+                <StackPanel Margin="0,8,0,8">
+                    <!-- Checkboxes Grid -->
+                    <WrapPanel Orientation="Horizontal">
+                        <CheckBox x:Name="ChkCompareVisual" 
+                                  Content="Visual Similarity" 
+                                  IsChecked="True" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare visual similarity"
+                                  AutomationProperties.HelpText="Compares images based on their visual appearance (recommended)." />
+                        
+                        <CheckBox x:Name="ChkCompareFileContents" 
+                                  Content="File Contents (Exact Hash)" 
+                                  IsChecked="False" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare file contents"
+                                  AutomationProperties.HelpText="Compares exact binary data of files using MD5 hashing." />
+
+                        <CheckBox x:Name="ChkCompareDateTime" 
+                                  Content="Date &amp; Time" 
+                                  IsChecked="False" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare date and time"
+                                  AutomationProperties.HelpText="Compares the photo taken date (EXIF) or modification date." />
+
+                        <CheckBox x:Name="ChkCompareLocation" 
+                                  Content="GPS Location" 
+                                  IsChecked="False" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare GPS Location"
+                                  AutomationProperties.HelpText="Compares embedded EXIF GPS coordinates." />
+
+                        <CheckBox x:Name="ChkCompareFilename" 
+                                  Content="Filename Similarity" 
+                                  IsChecked="False" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare filename similarity"
+                                  AutomationProperties.HelpText="Compares file names using text similarity algorithms." />
+
+                        <CheckBox x:Name="ChkCompareFileSize" 
+                                  Content="File Size" 
+                                  IsChecked="False" 
+                                  Margin="0,0,24,12"
+                                  AutomationProperties.Name="Compare file size"
+                                  AutomationProperties.HelpText="Compares the file size of the images." />
+                    </WrapPanel>
+
+                    <!-- Horizontal Separator -->
+                    <Border Height="1.5" Background="{StaticResource BorderBrush}" Margin="0,4,0,12" />
+
+                    <!-- AND / OR Match Mode Logic -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Label Content="Match Mode:" 
+                               Foreground="{StaticResource SecondaryTextBrush}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Padding="0,0,16,0" />
+
+                        <RadioButton x:Name="RadMatchAny" 
+                                     Content="Any selected criteria (OR)" 
+                                     IsChecked="True" 
+                                     Margin="0,0,24,0"
+                                     AutomationProperties.Name="Match any selected criteria (OR)"
+                                     AutomationProperties.HelpText="Flags files as duplicates if they match any of the checked comparison criteria." />
+
+                        <RadioButton x:Name="RadMatchAll" 
+                                     Content="All selected criteria (AND)" 
+                                     Margin="0,0,0,0"
+                                     AutomationProperties.Name="Match all selected criteria (AND)"
+                                     AutomationProperties.HelpText="Flags files as duplicates only if they match all of the checked comparison criteria." />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Threshold and Scan Settings -->
+            <GroupBox Grid.Column="1" Header="Scan Settings" Margin="12,0,0,0" Focusable="False">
+                <Grid Margin="0,8,0,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="Similarity Threshold:" 
+                           Grid.Row="0" Grid.Column="0"
+                           Target="{Binding ElementName=SldThreshold}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           VerticalAlignment="Center"
+                           Padding="0,0,0,4" />
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock x:Name="TxtThresholdVal" 
+                                   Text="{Binding ElementName=SldThreshold, Path=Value, StringFormat={}{0:F0}}" 
+                                   FontWeight="Bold" 
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="%" FontWeight="Bold" VerticalAlignment="Center" Margin="2,0,0,0" />
+                    </StackPanel>
+
+                    <!-- Slider configured for 1% increments (TickFrequency=1, SnapToTick=True) -->
+                    <Slider x:Name="SldThreshold" 
+                            Grid.Row="1" Grid.Column="0" 
+                            Minimum="50" Maximum="100" Value="90" 
+                            TickFrequency="1" IsSnapToTickEnabled="True"
+                            VerticalAlignment="Center" Margin="0,0,16,0"
+                            AutomationProperties.Name="Similarity Threshold"
+                            AutomationProperties.HelpText="Adjusts the percentage threshold to flag files as duplicates." />
+
+                    <Button x:Name="BtnScan" 
+                            Grid.Row="1" Grid.Column="1" 
+                            Style="{StaticResource PrimaryButtonStyle}" 
+                            Content="Start Scan" 
+                            Click="BtnScan_Click"
+                            Padding="20,8" 
+                            MinWidth="110"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="Start Scan"
+                            AutomationProperties.HelpText="Start analyzing the selected directory for duplicate images." />
+                </Grid>
+            </GroupBox>
+        </Grid>
+
+        <!-- Row 3: Status & Progress -->
+        <Grid Grid.Row="3" Margin="0,8,0,18" x:Name="GridProgress" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="TxtStatus" 
+                       Text="Scanning directory..." 
+                       Margin="0,0,0,10" 
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       AutomationProperties.LiveSetting="Polite" />
+            <ProgressBar x:Name="PrgScan" 
+                         Grid.Row="1" 
+                         Height="22" 
+                         Minimum="0" Maximum="100" Value="0" 
+                         Foreground="{StaticResource AccentBrush}" 
+                         Background="#121212" 
+                         BorderBrush="{StaticResource BorderBrush}"
+                         AutomationProperties.Name="Scanning progress" />
+        </Grid>
+
+        <!-- Row 4: Gallery and Preview Pane side-by-side -->
+        <Grid Grid.Row="4" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="0" MinWidth="0" MaxWidth="800" x:Name="ColPreview" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Gallery GroupBox -->
+            <GroupBox Grid.Column="0" Header="Duplicate Results Gallery" Focusable="False" Margin="0">
+                <Grid>
+                    <!-- Empty State Message -->
+                    <TextBlock x:Name="TxtNoResults" 
+                               Text="No duplicates found. Choose a folder and start a scan." 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center" 
+                               FontSize="16" 
+                               Foreground="{StaticResource SecondaryTextBrush}" 
+                               TextAlignment="Center"/>
+
+                    <!-- Results List (Includes scrolling jumping prevention event handler) -->
+                    <ListView x:Name="LstDuplicateGroups" 
+                              Background="Transparent" 
+                              BorderThickness="0"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              HorizontalContentAlignment="Stretch"
+                              SelectionMode="Single"
+                              Visibility="Collapsed"
+                              AutomationProperties.Name="Duplicate image list"
+                              AutomationProperties.HelpText="A list of identified duplicate rows. Each row starts with the original image on the left, followed by its duplicates.">
+                        
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="0,0,0,20"/>
+                                <Setter Property="Focusable" Value="False"/>
+                                <EventSetter Event="RequestBringIntoView" Handler="ListViewItem_RequestBringIntoView"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <!-- A single Group Row -->
+                                <Border Background="{StaticResource CardBackgroundBrush}" 
+                                        BorderBrush="{StaticResource BorderBrush}" 
+                                        BorderThickness="1.5" 
+                                        CornerRadius="8" 
+                                        Padding="16"
+                                        AutomationProperties.Name="{Binding AccessibilityName}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <!-- Primary Image Card -->
+                                            <ColumnDefinition Width="Auto" />
+                                            <!-- Vertical Separator -->
+                                            <ColumnDefinition Width="Auto" />
+                                            <!-- Duplicates List -->
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Primary Image Card (aligned with duplicate card styling) -->
+                                        <Border Grid.Column="0" 
+                                                Background="#161E2E" 
+                                                BorderBrush="{StaticResource BorderBrush}" 
+                                                BorderThickness="1" 
+                                                CornerRadius="6" 
+                                                Width="176" 
+                                                Margin="0,0,8,0" 
+                                                Padding="8"
+                                                Cursor="Hand"
+                                                MouseLeftButtonDown="Thumbnail_Click"
+                                                Focusable="True"
+                                                KeyDown="Thumbnail_KeyDown"
+                                                FocusVisualStyle="{StaticResource AccessibleFocusVisual}"
+                                                AutomationProperties.Name="Original image card">
+                                            <Border.ToolTip>
+                                                <ToolTip Background="#1E293B" BorderBrush="{StaticResource BorderBrush}" Foreground="{StaticResource TextBrush}">
+                                                    <StackPanel Margin="6">
+                                                        <TextBlock Text="File details (Original):" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,6" />
+                                                        <TextBlock Text="{Binding PrimaryImage.FileName, StringFormat='Name: {0}'}" FontSize="11" Margin="0,0,0,3" FontWeight="SemiBold" TextWrapping="Wrap" Width="280"/>
+                                                        <TextBlock Text="{Binding PrimaryImage.FileSize, Converter={StaticResource FileSizeConverter}, StringFormat='Size: {0}'}" FontSize="11" Margin="0,0,0,3"/>
+                                                        <TextBlock Text="{Binding PrimaryImage.DateTaken, StringFormat='Taken: {0:yyyy-MM-dd HH:mm}'}" FontSize="11" Margin="0,0,0,3"/>
+                                                        <TextBlock Text="{Binding PrimaryImage.CameraModel, StringFormat='Camera: {0}'}" FontSize="11" Margin="0,0,0,3" />
+                                                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,4,0,6" />
+                                                        <TextBlock Text="{Binding PrimaryImage.FilePath, StringFormat='Path: {0}'}" FontSize="9" Foreground="{StaticResource SecondaryTextBrush}" TextWrapping="Wrap" Width="280" />
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </Border.ToolTip>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Checkbox + Badge -->
+                                                <Grid Grid.Row="0" Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox IsChecked="{Binding IsGroupSelected}" 
+                                                              VerticalAlignment="Center"
+                                                              Content="Group"
+                                                              AutomationProperties.Name="Select whole duplicate group"
+                                                              AutomationProperties.HelpText="Toggle selection for all duplicates in this group." />
+                                                    <Border Grid.Column="1" 
+                                                            Background="{StaticResource SuccessBrush}" 
+                                                            CornerRadius="4" 
+                                                            Padding="4,2">
+                                                        <TextBlock Text="KEEP" 
+                                                                   Foreground="#0F172A" 
+                                                                   FontWeight="Bold" 
+                                                                   FontSize="10"/>
+                                                    </Border>
+                                                </Grid>
+
+                                                <!-- Thumbnail (Resized to 160x120) -->
+                                                <Border Grid.Row="1" Height="120" Width="160" 
+                                                        Background="#0F172A" 
+                                                        BorderBrush="{StaticResource BorderBrush}" 
+                                                        BorderThickness="1" 
+                                                        CornerRadius="4"
+                                                        HorizontalAlignment="Left">
+                                                    <Image Source="{Binding PrimaryImage.FilePath, Converter={StaticResource ThumbnailConverter}}" 
+                                                           Stretch="Uniform" 
+                                                           RenderOptions.BitmapScalingMode="LowQuality" />
+                                                </Border>
+
+                                                <!-- Align status/subtext row height -->
+                                                <TextBlock Grid.Row="2" 
+                                                           Text="Original" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="11" 
+                                                           Foreground="{StaticResource SecondaryTextBrush}" 
+                                                           Margin="0,4,0,0" />
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Separator -->
+                                        <Border Grid.Column="1" Width="1" 
+                                                Background="{StaticResource BorderBrush}" 
+                                                Margin="12,0,20,0" 
+                                                VerticalAlignment="Stretch"/>
+
+                                        <!-- Duplicates WrapPanel -->
+                                        <ItemsControl Grid.Column="2" ItemsSource="{Binding Duplicates}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <!-- Duplicate Item Card with click action to preview -->
+                                                    <Border Background="#161E2E" 
+                                                            BorderBrush="{StaticResource BorderBrush}" 
+                                                            BorderThickness="1" 
+                                                            CornerRadius="6" 
+                                                            Width="176" 
+                                                            Margin="0,0,12,12" 
+                                                            Padding="8"
+                                                            Cursor="Hand"
+                                                            MouseLeftButtonDown="Thumbnail_Click"
+                                                            Focusable="True"
+                                                            KeyDown="Thumbnail_KeyDown"
+                                                            FocusVisualStyle="{StaticResource AccessibleFocusVisual}"
+                                                            AutomationProperties.Name="{Binding AccessibilityName}">
+                                                        <Border.ToolTip>
+                                                            <ToolTip Background="#1E293B" BorderBrush="{StaticResource BorderBrush}" Foreground="{StaticResource TextBrush}">
+                                                                <StackPanel Margin="6">
+                                                                    <TextBlock Text="File details (Duplicate):" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,6" />
+                                                                    <TextBlock Text="{Binding Image.FileName, StringFormat='Name: {0}'}" FontSize="11" Margin="0,0,0,3" FontWeight="SemiBold" TextWrapping="Wrap" Width="280"/>
+                                                                    <TextBlock Text="{Binding Image.FileSize, Converter={StaticResource FileSizeConverter}, StringFormat='Size: {0}'}" FontSize="11" Margin="0,0,0,3"/>
+                                                                    <TextBlock Text="{Binding Image.DateTaken, StringFormat='Taken: {0:yyyy-MM-dd HH:mm}'}" FontSize="11" Margin="0,0,0,3"/>
+                                                                    <TextBlock Text="{Binding SimilarityPercentage, StringFormat='Similarity: {0:F0}%'}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}" Margin="0,0,0,3"/>
+                                                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,4,0,6" />
+                                                                    <TextBlock Text="{Binding Image.FilePath, StringFormat='Path: {0}'}" FontSize="9" Foreground="{StaticResource SecondaryTextBrush}" TextWrapping="Wrap" Width="280" />
+                                                                </StackPanel>
+                                                            </ToolTip>
+                                                        </Border.ToolTip>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <!-- Checkbox + Similarity Badge -->
+                                                            <Grid Grid.Row="0" Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                
+                                                                <CheckBox IsChecked="{Binding IsSelected}" 
+                                                                          VerticalAlignment="Center"
+                                                                          Content="Move"
+                                                                          AutomationProperties.Name="Select duplicate for moving"
+                                                                          AutomationProperties.HelpText="Check to select this duplicate to be moved to the Duplicates folder." />
+
+                                                                <Border Grid.Column="1" 
+                                                                        Background="{StaticResource AccentBrush}" 
+                                                                        CornerRadius="4" 
+                                                                        Padding="4,2">
+                                                                    <TextBlock Text="{Binding SimilarityPercentage, StringFormat={}{0:F0}%}" 
+                                                                               Foreground="#0F172A" 
+                                                                               FontWeight="Bold" 
+                                                                               FontSize="10"/>
+                                                                </Border>
+                                                            </Grid>
+
+                                                            <!-- Thumbnail (Resized to 160x120) -->
+                                                            <Border Grid.Row="1" Height="120" Width="160" 
+                                                                    Background="#0F172A" 
+                                                                    BorderBrush="{StaticResource BorderBrush}" 
+                                                                    BorderThickness="1" 
+                                                                    CornerRadius="4"
+                                                                    HorizontalAlignment="Left">
+                                                                <Image Source="{Binding Image.FilePath, Converter={StaticResource ThumbnailConverter}}" 
+                                                                       Stretch="Uniform" 
+                                                                       RenderOptions.BitmapScalingMode="LowQuality"/>
+                                                            </Border>
+
+                                                            <!-- Status / Result -->
+                                                            <TextBlock Grid.Row="2" 
+                                                                       Text="{Binding Status}" 
+                                                                       FontWeight="Bold" 
+                                                                       FontSize="11" 
+                                                                       Foreground="{StaticResource SuccessBrush}" 
+                                                                       Margin="0,4,0,0"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </GroupBox>
+
+            <!-- Resizable GridSplitter -->
+            <GridSplitter Grid.Column="1" 
+                          Width="6" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Stretch" 
+                          Background="#0F172A"
+                          Cursor="SizeWE"
+                          Visibility="{Binding Visibility, ElementName=GrpPreview}">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Background="Transparent" Width="6">
+                            <!-- Visual handle in the center -->
+                            <Rectangle Width="2" 
+                                       Height="30" 
+                                       Fill="{StaticResource BorderBrush}" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"
+                                       RadiusX="1" RadiusY="1" />
+                        </Border>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
+
+            <!-- Collapsible Preview Pane GroupBox -->
+            <GroupBox Grid.Column="2" 
+                      x:Name="GrpPreview" 
+                      Margin="8,0,0,0" 
+                      Focusable="False" 
+                      Visibility="Collapsed">
+                <GroupBox.Header>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Image Preview" 
+                                   FontWeight="Bold" 
+                                   Foreground="{StaticResource AccentBrush}" 
+                                   VerticalAlignment="Center" 
+                                   FontSize="13" />
+                        <Button Grid.Column="1" 
+                                Content="Close" 
+                                Click="ClosePreview_Click" 
+                                Padding="8,2" 
+                                MinHeight="24"
+                                MinWidth="50"
+                                FontSize="10"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Close Preview Pane" />
+                    </Grid>
+                </GroupBox.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,8,0,0">
+                    <StackPanel Margin="8">
+                        <!-- Preview Image Frame -->
+                        <Border BorderBrush="{StaticResource BorderBrush}" 
+                                BorderThickness="1" 
+                                CornerRadius="6" 
+                                Background="#0B0F19"
+                                Padding="4"
+                                Margin="0,0,0,16"
+                                MaxHeight="450"
+                                VerticalAlignment="Top">
+                            <Image x:Name="ImgPreview" 
+                                   Stretch="Uniform" 
+                                   MaxHeight="440"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+
+                        <!-- Details Section -->
+                        <TextBlock Text="File Details" 
+                                   FontWeight="Bold" 
+                                   FontSize="14" 
+                                   Foreground="{StaticResource AccentBrush}" 
+                                   Margin="0,0,0,8" />
+                        
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="LabelGroup" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- File Name -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtPreviewFileName" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6" />
+
+                            <!-- Dimensions -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Dims:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtPreviewDimensions" Margin="0,0,0,6" />
+
+                            <!-- Size -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Size:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtPreviewFileSize" Margin="0,0,0,6" />
+
+                            <!-- Date -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Date:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtPreviewDate" Margin="0,0,0,6" />
+
+                            <!-- Camera -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Camera:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TxtPreviewCamera" Margin="0,0,0,6" TextWrapping="Wrap" />
+
+                            <!-- GPS -->
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="GPS:" FontWeight="SemiBold" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,0,12,6" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TxtPreviewGps" Margin="0,0,0,6" TextWrapping="Wrap" />
+                        </Grid>
+
+                        <!-- Hidden textblock to store absolute path -->
+                        <TextBlock x:Name="TxtPreviewFilePath" Visibility="Collapsed" />
+
+                        <!-- Actions -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                            <Button Content="Copy Path" 
+                                    Click="CopyPath_Click" 
+                                    Margin="0,0,8,0"
+                                    Padding="8,4"
+                                    MinWidth="90"
+                                    AutomationProperties.Name="Copy full file path to clipboard" />
+                            <Button Content="Show in Folder" 
+                                    Click="OpenFolder_Click" 
+                                    Padding="8,4"
+                                    MinWidth="110"
+                                    AutomationProperties.Name="Open file location in File Explorer" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </GroupBox>
+        </Grid>
+
+        <!-- Row 5: Action Buttons & Copyright Footer -->
+        <Grid Grid.Row="5" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Results Summary & Copyright -->
+            <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
+                <TextBlock x:Name="TxtSummary" 
+                           Foreground="{StaticResource TextBrush}" 
+                           FontWeight="Bold"
+                           FontSize="12"
+                           AutomationProperties.LiveSetting="Polite"/>
+                <TextBlock Text="(c) 2026 Mike Hartley / Hart of the Midlands" 
+                           Foreground="{StaticResource SecondaryTextBrush}" 
+                           FontSize="10" 
+                           Margin="0,4,0,0" />
+            </StackPanel>
+
+            <Button x:Name="BtnSweepSelected" 
+                    Grid.Column="1" 
+                    Content="Move Selected Duplicates" 
+                    Click="BtnSweepSelected_Click"
+                    IsEnabled="False"
+                    Padding="16,8"
+                    Margin="0,0,12,0"
+                    AutomationProperties.Name="Move Selected Duplicates"
+                    AutomationProperties.HelpText="Moves only the selected duplicates to the Duplicates folder. The original remains." />
+
+            <Button x:Name="BtnSweepAll" 
+                    Grid.Column="2" 
+                    Content="Move All Duplicates" 
+                    Click="BtnSweepAll_Click"
+                    IsEnabled="False"
+                    Padding="16,8"
+                    AutomationProperties.Name="Move All Duplicates"
+                    AutomationProperties.HelpText="Moves all flagged duplicates to the Duplicates folder, keeping only the original image for each group." />
+        </Grid>
+    </Grid>
+</Window>

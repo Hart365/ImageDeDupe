@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ImageDeDupe</AssemblyName>
+    <RootNamespace>ImageDeDupeApp</RootNamespace>
+    <Product>ImageDeDupe</Product>
+    <Company>Hart of the Midlands</Company>
+    <Copyright>(c) 2026 Mike Hartley / Hart of the Midlands</Copyright>
+    <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MetadataExtractor" Version="2.9.3" />
+    <Resource Include="Resources\app_logo.png" />
+    <Resource Include="Resources\app_icon.ico" />
+    <Resource Include="Resources\check_icon.png" />
+  </ItemGroup>
+
+</Project>
