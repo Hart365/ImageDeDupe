@@ -80,3 +80,4 @@ A modern, fast, and fully accessible WPF desktop application for finding and rem
 ## License
 
 (c) 2026 Mike Hartley / Hart of the Midlands. All rights reserved.
+This project is licensed under the terms of the MIT license
